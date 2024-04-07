@@ -16,8 +16,6 @@ namespace MWL_Tester
     {
         protected override void OnStartup(StartupEventArgs e)
         {
-            var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MWL-Tester\Logs\Trace.log");
-
             var serilogLogger = ConfigureLogging();
 
             new DicomSetupBuilder() // Requires Serilog.Extensions.Logging for the AddSerilog function.

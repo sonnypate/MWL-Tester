@@ -2,6 +2,8 @@
 using FellowOakDicom.Network;
 using FellowOakDicom.Network.Client;
 using Serilog;
+using System.Diagnostics;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,12 +17,14 @@ namespace MWL_Tester
     public partial class MainWindow : Window
     {
         ILogger _logger;
+        string _logDir;
         CancellationTokenSource _cts = new CancellationTokenSource();
 
         public MainWindow()
         {
             _logger = Log.ForContext<MainWindow>();
             InitializeComponent();
+            _logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MWL-Tester\Logs\");
         }
 
         private async void Test_Click(object sender, RoutedEventArgs e)
@@ -138,6 +142,11 @@ namespace MWL_Tester
         private void Client_AssociationRejected(object? sender, FellowOakDicom.Network.Client.EventArguments.AssociationRejectedEventArgs e)
         {
             UpdateStatusBar("Association rejected");
+        }
+
+        private void LogMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // Open log directory.
         }
     }
 }
