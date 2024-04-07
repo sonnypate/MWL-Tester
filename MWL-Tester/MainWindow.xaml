@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MWL_Tester"
         mc:Ignorable="d"
-        Title="MWL Tester" Height="500" Width="800" MinHeight="450" MinWidth="600">
+        Title="MWL Tester" Height="500" Width="800" MinHeight="450" MinWidth="600"
+        Closing="Window_Closing">
     <Grid>
         <DockPanel LastChildFill="True">
             <Menu DockPanel.Dock="Top" Background="White">
@@ -20,7 +21,7 @@
             </Menu>
 
             <StatusBar DockPanel.Dock="Bottom" Background="White" >
-                <Label Content="Status here..." />
+                <Label Name="StatusText" Content="Status here..." />
             </StatusBar>
 
             <Border DockPanel.Dock="Top" Padding="5">
