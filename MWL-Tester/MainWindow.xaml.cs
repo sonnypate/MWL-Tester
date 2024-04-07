@@ -1,4 +1,5 @@
-﻿using FellowOakDicom.Network;
+﻿using CommunityToolkit.HighPerformance.Helpers;
+using FellowOakDicom.Network;
 using FellowOakDicom.Network.Client;
 using Serilog;
 using System.Text.RegularExpressions;
@@ -30,9 +31,33 @@ namespace MWL_Tester
 
         private async Task TestDicomConnection()
         {
+            if (Test.Content.Equals("Cancel"))
+            {
+                _cts.Cancel();
+                Test.Content = "Test";
+            }
+            // Try to reset the cancellation token to be used again if needed.
+            else
+            {
+                _cts = new CancellationTokenSource();
+
+                Test.Content = "Cancel";
+                await PerformConnectionTest(_cts.Token);
+                Test.Content = "Test";
+            }
+        }
+
+        private void CalledPort_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        {
+            Regex regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private async Task PerformConnectionTest(CancellationToken cancellationToken)
+        {
             var port = 0;
             var numeric = int.TryParse(CalledPort.Text, out port);
-            
+
             if (numeric)
             {
                 StatusText.Content = "Starting C-Echo";
@@ -40,13 +65,19 @@ namespace MWL_Tester
                 var client = DicomClientFactory.Create(CalledHost.Text, port, Properties.Settings.Default.UseTLS, CallingAET.Text, CalledAET.Text);
                 client.AssociationAccepted += Client_AssociationAccepted;
                 client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
+                client.AssociationRejected += Client_AssociationRejected;
+                client.AssociationReleased += Client_AssociationReleased;
 
                 try
                 {
                     client.NegotiateAsyncOps();
+                    
                     for (int i = 0; i < 10; i++)
+                    {
                         await client.AddRequestAsync(new DicomCEchoRequest());
-                    await client.SendAsync(_cts.Token);
+                    }
+
+                    await client.SendAsync(cancellationToken);
                 }
                 catch (AggregateException ex)
                 {
@@ -56,9 +87,17 @@ namespace MWL_Tester
                     return;
                 }
 
-                MessageBox.Show($"Connection to {CalledHost.Text} was successful.", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Information);
-                StatusText.Content = "Connection successful";
-
+                // If the cancel button was clicked, then update status, otherwise if it made it this far then it was successful.
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    StatusText.Content = "Test cancelled";
+                    return;
+                }
+                else
+                {
+                    MessageBox.Show($"Connection to {CalledHost.Text} was successful.", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Information);
+                    StatusText.Content = "Connection successful";
+                }
             }
             else
             {
@@ -66,40 +105,39 @@ namespace MWL_Tester
             }
         }
 
-        private void Client_AssociationRequestTimedOut(object? sender, FellowOakDicom.Network.Client.EventArguments.AssociationRequestTimedOutEventArgs e)
+        private void UpdateStatusBar(string message)
         {
             if (StatusText.Dispatcher.CheckAccess())
             {
-                StatusText.Content = $"Connection timed out";
+                StatusText.Content = message;
             }
             else
             {
                 this.Dispatcher.Invoke(() =>
                 {
-                    StatusText.Content = $"Connection timed out";
+                    StatusText.Content = message;
                 });
             }
+        }
+
+        private void Client_AssociationRequestTimedOut(object? sender, FellowOakDicom.Network.Client.EventArguments.AssociationRequestTimedOutEventArgs e)
+        {
+            UpdateStatusBar("Connection timed out.");
         }
 
         private void Client_AssociationAccepted(object? sender, FellowOakDicom.Network.Client.EventArguments.AssociationAcceptedEventArgs e)
-        {            
-            if (StatusText.Dispatcher.CheckAccess())
-            {
-                StatusText.Content = "Association accepted";
-            }
-            else
-            {
-                this.Dispatcher.Invoke(() =>
-                {
-                    StatusText.Content = "Association accepted";
-                });
-            }
+        {
+            UpdateStatusBar("Association accepted");
         }
 
-        private void CalledPort_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        private void Client_AssociationReleased(object? sender, EventArgs e)
         {
-            Regex regex = new Regex("[^0-9]+");
-            e.Handled = regex.IsMatch(e.Text);
+            UpdateStatusBar("Association released");
+        }
+
+        private void Client_AssociationRejected(object? sender, FellowOakDicom.Network.Client.EventArguments.AssociationRejectedEventArgs e)
+        {
+            UpdateStatusBar("Association rejected");
         }
     }
 }
