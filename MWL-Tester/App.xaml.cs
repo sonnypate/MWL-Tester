@@ -20,11 +20,10 @@ namespace MWL_Tester
 
             var serilogLogger = ConfigureLogging();
 
-            new DicomSetupBuilder()
+            new DicomSetupBuilder() // Requires Serilog.Extensions.Logging for the AddSerilog function.
                 .RegisterServices(services => services.AddLogging(logging => logging.AddSerilog(serilogLogger)))
                 .Build();
 
-            Log.Information("Hello, world!");
             base.OnStartup(e);
         }
 
@@ -41,6 +40,7 @@ namespace MWL_Tester
                 .WriteTo.File(logPath, 
                     global::Serilog.Events.LogEventLevel.Verbose, 
                     rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} | [{Level:u3}] | {Message:lj}{NewLine}{Exception}");
 
             var logger = loggerConfig
@@ -52,5 +52,15 @@ namespace MWL_Tester
 
             return logger;
         }
+
+        private void OnExit(object sender, ExitEventArgs e)
+        {
+            // Clean up logging before shutting down.
+            Log.CloseAndFlush();
+
+            // Save any user settings automatically.
+            MWL_Tester.Properties.Settings.Default.Save();
+        }
+
     }
 }

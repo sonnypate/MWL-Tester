@@ -1,6 +1,7 @@
 ﻿using FellowOakDicom.Network;
 using FellowOakDicom.Network.Client;
 using Serilog;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -29,20 +30,30 @@ namespace MWL_Tester
 
         private async Task TestDicomConnection()
         {
-            var client = DicomClientFactory.Create(ServerIpAddress.Text, int.Parse(ServerPort.Text), false, CallingAET.Text, ServerAET.Text);
-            client.AssociationAccepted += Client_AssociationAccepted;
-            client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
+            var port = 0;
+            var numeric = int.TryParse(CalledPort.Text, out port);
+            
+            if (numeric)
+            {
+                var client = DicomClientFactory.Create(CalledHost.Text, port, false, CallingAET.Text, CalledAET.Text);
+                client.AssociationAccepted += Client_AssociationAccepted;
+                client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
 
-            try
-            {
-                client.NegotiateAsyncOps();
-                for (int i = 0; i < 10; i++)
-                    await client.AddRequestAsync(new DicomCEchoRequest());
-                await client.SendAsync(_cts.Token);
+                try
+                {
+                    client.NegotiateAsyncOps();
+                    for (int i = 0; i < 10; i++)
+                        await client.AddRequestAsync(new DicomCEchoRequest());
+                    await client.SendAsync(_cts.Token);
+                }
+                catch (AggregateException ex)
+                {
+                    _logger.Error("Error: {exception}", ex);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                _logger.Error("Error: {exception}", ex);
+                MessageBox.Show("Called port must be a number", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -76,9 +87,10 @@ namespace MWL_Tester
             }
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void CalledPort_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
         {
-            Log.CloseAndFlush();
+            Regex regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
         }
     }
 }
