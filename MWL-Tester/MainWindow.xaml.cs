@@ -35,7 +35,9 @@ namespace MWL_Tester
             
             if (numeric)
             {
-                var client = DicomClientFactory.Create(CalledHost.Text, port, false, CallingAET.Text, CalledAET.Text);
+                StatusText.Content = "Starting C-Echo";
+
+                var client = DicomClientFactory.Create(CalledHost.Text, port, Properties.Settings.Default.UseTLS, CallingAET.Text, CalledAET.Text);
                 client.AssociationAccepted += Client_AssociationAccepted;
                 client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
 
@@ -49,7 +51,14 @@ namespace MWL_Tester
                 catch (AggregateException ex)
                 {
                     _logger.Error("Error: {exception}", ex);
+                    MessageBox.Show($"Error while connecting to '{CalledHost.Text}': {Environment.NewLine}{ex.Message}", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Error);
+                    StatusText.Content = "Connection failed";
+                    return;
                 }
+
+                MessageBox.Show($"Connection to {CalledHost.Text} was successful.", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Information);
+                StatusText.Content = "Connection successful";
+
             }
             else
             {

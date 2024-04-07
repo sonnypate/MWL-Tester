@@ -70,5 +70,17 @@ namespace MWL_Tester.Properties {
                 this["CallingAET"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseTLS {
+            get {
+                return ((bool)(this["UseTLS"]));
+            }
+            set {
+                this["UseTLS"] = value;
+            }
+        }
     }
 }
