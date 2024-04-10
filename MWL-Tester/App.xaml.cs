@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Enrichers;
+using Serilog.Events;
 using System.IO;
 using System.Windows;
 using ILogger = Serilog.ILogger;
@@ -30,20 +31,15 @@ namespace MWL_Tester
             var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MWL-Tester\Logs\Trace.log");
 
             var loggerConfig = new LoggerConfiguration()
-                //Enrich each log message with the machine name
                 .Enrich.With<MachineNameEnricher>()
-                //Accept verbose output  (there is effectively no filter)
                 .MinimumLevel.Verbose()
-                //Also write out to a file based on the date and restrict these writes to warnings or worse (warning, error, fatal)
                 .WriteTo.File(logPath, 
                     global::Serilog.Events.LogEventLevel.Verbose, 
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 7,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} | [{Level:u3}] | {Message:lj}{NewLine}{Exception}");
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
 
-            var logger = loggerConfig
-                //Take all of that configuration and make a logger
-                .CreateLogger();
+            var logger = loggerConfig.CreateLogger();
 
             //Stash the logger in the global Log instance for convenience
             global::Serilog.Log.Logger = logger;

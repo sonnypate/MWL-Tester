@@ -29,25 +29,24 @@ namespace MWL_Tester
 
         private async void Test_Click(object sender, RoutedEventArgs e)
         {
-            //TODO: Add cancellation
             await TestDicomConnection();
         }
 
         private async Task TestDicomConnection()
         {
-            if (Test.Content.Equals("Cancel"))
+            if (TestButton.Content.Equals("Cancel"))
             {
                 _cts.Cancel();
-                Test.Content = "Test";
+                TestButton.Content = "Test";
             }
             // Try to reset the cancellation token to be used again if needed.
             else
             {
                 _cts = new CancellationTokenSource();
 
-                Test.Content = "Cancel";
+                TestButton.Content = "Cancel";
                 await PerformConnectionTest(_cts.Token);
-                Test.Content = "Test";
+                TestButton.Content = "Test";
             }
         }
 
@@ -65,6 +64,7 @@ namespace MWL_Tester
             if (numeric)
             {
                 StatusText.Content = "Starting C-Echo";
+                _logger.Information("Starting C-Echo");
 
                 var client = DicomClientFactory.Create(CalledHost.Text, port, Properties.Settings.Default.UseTLS, CallingAET.Text, CalledAET.Text);
                 client.AssociationAccepted += Client_AssociationAccepted;
