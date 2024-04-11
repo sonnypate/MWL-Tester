@@ -42,7 +42,7 @@ namespace MWL_Tester
             var logger = loggerConfig.CreateLogger();
 
             //Stash the logger in the global Log instance for convenience
-            global::Serilog.Log.Logger = logger;
+            Log.Logger = logger;
 
             return logger;
         }

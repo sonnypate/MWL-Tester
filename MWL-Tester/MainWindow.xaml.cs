@@ -29,17 +29,12 @@ namespace MWL_Tester
 
         private async void Test_Click(object sender, RoutedEventArgs e)
         {
-            await TestDicomConnection();
-        }
-
-        private async Task TestDicomConnection()
-        {
             if (TestButton.Content.Equals("Cancel"))
             {
                 _cts.Cancel();
                 TestButton.Content = "Test";
             }
-            // Try to reset the cancellation token to be used again if needed.
+            // Reset the cancellation token to be used again if needed.
             else
             {
                 _cts = new CancellationTokenSource();
@@ -52,6 +47,7 @@ namespace MWL_Tester
 
         private void CalledPort_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
         {
+            // Only allow numeric values to be typed
             Regex regex = new Regex("[^0-9]+");
             e.Handled = regex.IsMatch(e.Text);
         }
@@ -146,7 +142,31 @@ namespace MWL_Tester
 
         private void LogMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            ProcessStartInfo processStartInfo = new ProcessStartInfo()
+            {
+                FileName = _logDir,
+                UseShellExecute = true
+            };
+
             // Open log directory.
+            try
+            {
+                Process.Start(processStartInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Error while opening '{dir}': {exception}", _logDir, ex);
+            }
+        }
+
+        private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
+        private void Submit_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
