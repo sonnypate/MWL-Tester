@@ -1,7 +1,10 @@
 ﻿using CommunityToolkit.HighPerformance.Helpers;
+using FellowOakDicom;
 using FellowOakDicom.Network;
 using FellowOakDicom.Network.Client;
+using MWL_Tester.DICOM;
 using Serilog;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -16,15 +19,27 @@ namespace MWL_Tester
     /// </summary>
     public partial class MainWindow : Window
     {
-        ILogger _logger;
-        string _logDir;
-        CancellationTokenSource _cts = new CancellationTokenSource();
+        private ILogger _logger;
+        private string _logDir;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private int _resultCounter = 0;
+
+        ObservableCollection<WorklistResponse> WorklistResponses { get; set; } = new ObservableCollection<WorklistResponse>();
 
         public MainWindow()
         {
             _logger = Log.ForContext<MainWindow>();
             InitializeComponent();
             _logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MWL-Tester\Logs\");
+
+            QueryResultsGrid.ItemsSource = WorklistResponses;
+            WorklistResponses.CollectionChanged += WorklistResponses_CollectionChanged;
+        }
+
+        private void WorklistResponses_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            _resultCounter++;
+            UpdateStatusBar($"Found {_resultCounter.ToString()} results.");
         }
 
         private async void Test_Click(object sender, RoutedEventArgs e)
@@ -67,7 +82,7 @@ namespace MWL_Tester
                 client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
                 client.AssociationRejected += Client_AssociationRejected;
                 client.AssociationReleased += Client_AssociationReleased;
-
+                
                 try
                 {
                     client.NegotiateAsyncOps();
@@ -164,9 +179,96 @@ namespace MWL_Tester
             Application.Current.Shutdown();
         }
 
-        private void Submit_Click(object sender, RoutedEventArgs e)
+        private async void Submit_Click(object sender, RoutedEventArgs e)
         {
+            
+            WorklistRequest request = new WorklistRequest()
+            {
+                Accession = AccessionText.Text,
+                PatientID = PatientIdText.Text,
+                PatientName = PatientNameText.Text,
+                StationAET = string.Empty,
+                StationName = string.Empty,
+                Modality = ModalityText.Text,
+                ScheduledDateTime = null
+            };
 
+            Connection connection = new Connection()
+            {
+                CalledAET = CalledAET.Text,
+                CalledHost = CalledHost.Text,
+                CallingAET = CallingAET.Text,
+                Port = Int32.Parse(CalledPort.Text),
+                UseTLS = UseTlsCheckbox.IsChecked.Value
+            };
+
+            var dataset = await PerformWorklistQuery(connection, CreateWorklistRequest(request));
+
+            GetWorklistValuesFromDataset(dataset);
+        }
+
+        private DicomCFindRequest CreateWorklistRequest(WorklistRequest requestParams)
+        {
+            var worklistQuery = DicomCFindRequest.CreateWorklistQuery(
+                patientId: requestParams.PatientID,
+                patientName: requestParams.PatientName,
+                stationAE: requestParams.StationAET,
+                stationName: requestParams.StationName,
+                modality: requestParams.Modality,
+                scheduledDateTime: requestParams.ScheduledDateTime
+                );
+
+            return worklistQuery;
+        }
+
+        private async Task<List<DicomDataset>> PerformWorklistQuery(Connection connection, DicomCFindRequest request)
+        {
+            var worklistItems = new List<DicomDataset>();
+
+            request.OnResponseReceived = (DicomCFindRequest rq, DicomCFindResponse rp) =>
+            {
+                if (rp.HasDataset)
+                {
+                    _logger.Information("Study UID: {SUID}", rp.Dataset.GetSingleValue<string>(DicomTag.StudyInstanceUID));
+                    worklistItems.Add(rp.Dataset);
+                }
+                else
+                {
+                    _logger.Warning(rp.Status.ToString());
+                }
+            };
+
+            var client = DicomClientFactory.Create(connection.CalledHost, connection.Port, connection.UseTLS, connection.CallingAET, connection.CalledAET);
+            
+            client.AssociationAccepted += Client_AssociationAccepted;
+            client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
+            client.AssociationRejected += Client_AssociationRejected;
+            client.AssociationReleased += Client_AssociationReleased;
+
+            await client.AddRequestAsync(request);
+            await client.SendAsync();
+
+            return worklistItems;
+        }
+
+        private void GetWorklistValuesFromDataset(List<DicomDataset> datasets)
+        {
+            WorklistResponses.Clear();
+
+            _resultCounter = 0;
+
+            foreach (var dataset in datasets)
+            {
+                var worklist = new WorklistResponse();
+                worklist.PatientName = dataset.GetSingleValueOrDefault(DicomTag.PatientName, string.Empty);
+                worklist.PatientId = dataset.GetSingleValueOrDefault(DicomTag.PatientID, string.Empty);
+                worklist.Accession = dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, string.Empty);
+                worklist.Modality = dataset.GetSingleValueOrDefault(DicomTag.Modality, string.Empty);
+                worklist.StudyInstanceUID = dataset.GetSingleValue<string>(DicomTag.StudyInstanceUID);
+                worklist.ScheduledStudyDate = dataset.GetSingleValueOrDefault(DicomTag.StudyDate, string.Empty);
+
+                WorklistResponses.Add(worklist);
+            }
         }
     }
 }
