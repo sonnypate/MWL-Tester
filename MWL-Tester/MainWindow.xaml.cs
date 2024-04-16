@@ -23,17 +23,18 @@ namespace MWL_Tester
         private string _logDir;
         private CancellationTokenSource _cts = new CancellationTokenSource();
         private int _resultCounter = 0;
+        WorklistQuery _worklistQuery;
 
-        ObservableCollection<WorklistResponse> WorklistResponses { get; set; } = new ObservableCollection<WorklistResponse>();
+        //ObservableCollection<WorklistResponse> WorklistResponses { get; set; } = new ObservableCollection<WorklistResponse>();
 
         public MainWindow()
         {
             _logger = Log.ForContext<MainWindow>();
             InitializeComponent();
             _logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MWL-Tester\Logs\");
-
-            QueryResultsGrid.ItemsSource = WorklistResponses;
-            WorklistResponses.CollectionChanged += WorklistResponses_CollectionChanged;
+            _worklistQuery = new WorklistQuery();
+            QueryResultsGrid.ItemsSource = _worklistQuery.WorklistResponses;
+            _worklistQuery.WorklistResponses.CollectionChanged += WorklistResponses_CollectionChanged;
         }
 
         private void WorklistResponses_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -181,6 +182,9 @@ namespace MWL_Tester
 
         private async void Submit_Click(object sender, RoutedEventArgs e)
         {
+            _resultCounter = 0;
+
+            UpdateStatusBar("Starting worklist query");
             
             WorklistRequest request = new WorklistRequest()
             {
@@ -202,9 +206,17 @@ namespace MWL_Tester
                 UseTLS = UseTlsCheckbox.IsChecked.Value
             };
 
-            var dataset = await PerformWorklistQuery(connection, CreateWorklistRequest(request));
 
-            GetWorklistValuesFromDataset(dataset);
+            var client = DicomClientFactory.Create(connection.CalledHost, connection.Port, connection.UseTLS, connection.CallingAET, connection.CalledAET);
+            client.AssociationAccepted += Client_AssociationAccepted;
+            client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
+            client.AssociationRejected += Client_AssociationRejected;
+            client.AssociationReleased += Client_AssociationReleased;
+
+
+            var dataset = await _worklistQuery.PerformWorklistQuery(client, CreateWorklistRequest(request));
+
+            _worklistQuery.GetWorklistValuesFromDataset(dataset);
         }
 
         private DicomCFindRequest CreateWorklistRequest(WorklistRequest requestParams)
@@ -219,56 +231,6 @@ namespace MWL_Tester
                 );
 
             return worklistQuery;
-        }
-
-        private async Task<List<DicomDataset>> PerformWorklistQuery(Connection connection, DicomCFindRequest request)
-        {
-            var worklistItems = new List<DicomDataset>();
-
-            request.OnResponseReceived = (DicomCFindRequest rq, DicomCFindResponse rp) =>
-            {
-                if (rp.HasDataset)
-                {
-                    _logger.Information("Study UID: {SUID}", rp.Dataset.GetSingleValue<string>(DicomTag.StudyInstanceUID));
-                    worklistItems.Add(rp.Dataset);
-                }
-                else
-                {
-                    _logger.Warning(rp.Status.ToString());
-                }
-            };
-
-            var client = DicomClientFactory.Create(connection.CalledHost, connection.Port, connection.UseTLS, connection.CallingAET, connection.CalledAET);
-            
-            client.AssociationAccepted += Client_AssociationAccepted;
-            client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
-            client.AssociationRejected += Client_AssociationRejected;
-            client.AssociationReleased += Client_AssociationReleased;
-
-            await client.AddRequestAsync(request);
-            await client.SendAsync();
-
-            return worklistItems;
-        }
-
-        private void GetWorklistValuesFromDataset(List<DicomDataset> datasets)
-        {
-            WorklistResponses.Clear();
-
-            _resultCounter = 0;
-
-            foreach (var dataset in datasets)
-            {
-                var worklist = new WorklistResponse();
-                worklist.PatientName = dataset.GetSingleValueOrDefault(DicomTag.PatientName, string.Empty);
-                worklist.PatientId = dataset.GetSingleValueOrDefault(DicomTag.PatientID, string.Empty);
-                worklist.Accession = dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, string.Empty);
-                worklist.Modality = dataset.GetSingleValueOrDefault(DicomTag.Modality, string.Empty);
-                worklist.StudyInstanceUID = dataset.GetSingleValue<string>(DicomTag.StudyInstanceUID);
-                worklist.ScheduledStudyDate = dataset.GetSingleValueOrDefault(DicomTag.StudyDate, string.Empty);
-
-                WorklistResponses.Add(worklist);
-            }
         }
     }
 }
