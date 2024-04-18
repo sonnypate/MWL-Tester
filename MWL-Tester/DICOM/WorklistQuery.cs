@@ -23,7 +23,7 @@ namespace MWL_Tester.DICOM
             _logger = Log.ForContext<WorklistQuery>();
         }
 
-        internal async Task<List<DicomDataset>> PerformWorklistQuery(IDicomClient client, DicomCFindRequest request)
+        internal async Task<List<DicomDataset>> PerformWorklistQuery(IDicomClient client, DicomCFindRequest request, CancellationToken cancellationToken)
         {
             var worklistItems = new List<DicomDataset>();
 
@@ -41,7 +41,7 @@ namespace MWL_Tester.DICOM
             };
 
             await client.AddRequestAsync(request);
-            await client.SendAsync();
+            await client.SendAsync(cancellationToken);
 
             return worklistItems;
         }
