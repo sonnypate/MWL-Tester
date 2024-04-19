@@ -53,12 +53,22 @@ namespace MWL_Tester.DICOM
             foreach (var dataset in datasets)
             {
                 var worklist = new WorklistResponse();
+
                 worklist.PatientName = dataset.GetSingleValueOrDefault(DicomTag.PatientName, string.Empty);
                 worklist.PatientId = dataset.GetSingleValueOrDefault(DicomTag.PatientID, string.Empty);
                 worklist.Accession = dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, string.Empty);
-                worklist.Modality = dataset.GetSingleValueOrDefault(DicomTag.Modality, string.Empty);
                 worklist.StudyInstanceUID = dataset.GetSingleValue<string>(DicomTag.StudyInstanceUID);
-                worklist.ScheduledStudyDate = dataset.GetSingleValueOrDefault(DicomTag.StudyDate, string.Empty);
+
+                var scheduledProcedureStep = dataset.GetSequence(DicomTag.ScheduledProcedureStepSequence);
+                if (scheduledProcedureStep.Items.Count > 0)
+                {
+                    foreach (var item in scheduledProcedureStep)
+                    {
+                        worklist.Modality = item.GetSingleValueOrDefault(DicomTag.Modality, string.Empty);
+                        worklist.ScheduledStudyDate = item.GetSingleValueOrDefault(DicomTag.ScheduledProcedureStepStartDate, string.Empty);
+                        worklist.ScheduledStudyTime = item.GetSingleValueOrDefault(DicomTag.ScheduledProcedureStepStartTime, string.Empty);
+                    }
+                }
 
                 WorklistResponses.Add(worklist);
             }

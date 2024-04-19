@@ -121,13 +121,14 @@
 
             <Border Padding="5">
                 <GroupBox Header="Results:" BorderBrush="Black" BorderThickness="1">
-                    <DataGrid x:Name="QueryResultsGrid" Margin="5" CanUserAddRows="False" AutoGenerateColumns="False">
+                    <DataGrid x:Name="QueryResultsGrid" AlternatingRowBackground="LightGray" Margin="5" CanUserAddRows="False" AutoGenerateColumns="False">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Patient Name" Binding="{Binding PatientName}" />
                             <DataGridTextColumn Header="Patient ID" Binding="{Binding PatientId}" />
                             <DataGridTextColumn Header="Accession" Binding="{Binding Accession}" />
                             <DataGridTextColumn Header="Modality" Binding="{Binding Modality}" />
                             <DataGridTextColumn Header="Scheduled Date" Binding="{Binding ScheduledStudyDate}" />
+                            <DataGridTextColumn Header="Study Instance UID" Binding="{Binding ScheduledStudyTime}" />
                             <DataGridTextColumn Header="Study Instance UID" Binding="{Binding StudyInstanceUID}" />
                         </DataGrid.Columns>
                     </DataGrid>

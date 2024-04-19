@@ -22,7 +22,6 @@ namespace MWL_Tester
         private ILogger _logger;
         private string _logDir;
         private CancellationTokenSource _cts = new CancellationTokenSource();
-        private int _resultCounter = 0;
         WorklistQuery _worklistQuery;
 
         public MainWindow()
@@ -107,7 +106,6 @@ namespace MWL_Tester
 
             if (numeric)
             {
-                _resultCounter = 0;
                 UpdateStatusBar("Starting worklist query");
 
                 WorklistRequest request = new WorklistRequest()
@@ -207,9 +205,8 @@ namespace MWL_Tester
                 CalledHost = CalledHost.Text,
                 CallingAET = CallingAET.Text,
                 Port = Int32.Parse(CalledPort.Text),
-                UseTLS = UseTlsCheckbox.IsChecked.Value
+                UseTLS = UseTlsCheckbox.IsChecked.GetValueOrDefault()
             };
-
 
             var client = DicomClientFactory.Create(connection.CalledHost, connection.Port, connection.UseTLS, connection.CallingAET, connection.CalledAET);
             client.AssociationAccepted += Client_AssociationAccepted;
@@ -243,8 +240,7 @@ namespace MWL_Tester
 
         private void WorklistResponses_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            _resultCounter++;
-            UpdateStatusBar($"Found {_resultCounter} results.");
+            UpdateStatusBar($"Found {_worklistQuery.WorklistResponses.Count} results.");
         }
 
         private void Client_AssociationRequestTimedOut(object? sender, FellowOakDicom.Network.Client.EventArguments.AssociationRequestTimedOutEventArgs e)
