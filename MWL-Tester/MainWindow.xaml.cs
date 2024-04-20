@@ -1,16 +1,12 @@
-﻿using CommunityToolkit.HighPerformance.Helpers;
-using FellowOakDicom;
+﻿using FellowOakDicom;
 using FellowOakDicom.Network;
 using FellowOakDicom.Network.Client;
 using MWL_Tester.DICOM;
 using Serilog;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Threading;
 
 namespace MWL_Tester
 {
@@ -108,22 +104,48 @@ namespace MWL_Tester
             {
                 UpdateStatusBar("Starting worklist query");
 
+                //var dr = new DicomDateRange(StartDatePicker.SelectedDate.GetValueOrDefault(), EndDatePicker.SelectedDate.GetValueOrDefault());
+
                 var request = DicomCFindRequest.CreateWorklistQuery(
                     patientId: PatientIdText.Text,
                     patientName: PatientNameText.Text,
-                    stationAE: string.Empty,
-                    stationName: string.Empty,
+                    stationAE: StationAetText.Text,
+                    stationName: StationNameText.Text,
                     modality: ModalityText.Text
-                    //scheduledDateTime: string.Empty
+                    //scheduledDateTime: dr
                 );
 
+
+                // The dataset used to query the PACS server can be extended:
                 //request.Dataset.AddOrUpdate(DicomTag.AccessionNumber, AccessionText.Text);
+
+                // Get the ScheduledProcedureStepSequence from the dataset created by the CreateWorklistQuery function.
+                // Using this instead of the built-in scheduledDateTime parameter from the CreateWorklistQuery function because it requires
+                // a range. This allows me to optionally select either a start date, both, or none:
+                foreach (var item in request.Dataset.GetSequence(DicomTag.ScheduledProcedureStepSequence))
+                {
+                    if (StartDatePicker.SelectedDate != null)
+                    {
+                        item?.AddOrUpdate(DicomTag.ScheduledProcedureStepStartDate, StartDatePicker.SelectedDate.GetValueOrDefault());
+                    }
+
+                    if (StartDatePicker.SelectedDate == null && EndDatePicker.SelectedDate != null)
+                    {
+                        StartDatePicker.SelectedDate = EndDatePicker.SelectedDate.GetValueOrDefault();
+                    }
+
+                    if (StartDatePicker.SelectedDate != null && EndDatePicker.SelectedDate != null)
+                    {
+                        var dr = new DicomDateRange(StartDatePicker.SelectedDate.GetValueOrDefault(), EndDatePicker.SelectedDate.GetValueOrDefault().AddDays(1).AddTicks(-1));
+                        item?.AddOrUpdate(DicomTag.ScheduledProcedureStepStartDate, dr);
+                        item?.AddOrUpdate(DicomTag.ScheduledProcedureStepStartTime, dr);
+                    }
+                }
 
                 try
                 {
                     var client = GetDicomClient();
-                    client.ServiceOptions.LogDimseDatasets = true;
-                    //client.ServiceOptions.LogDataPDUs = true;
+
                     var dataset = await _worklistQuery.PerformWorklistQuery(client, request, cancellationToken);
                     _worklistQuery.GetWorklistValuesFromDataset(dataset);
                 }
@@ -132,6 +154,10 @@ namespace MWL_Tester
 
                     throw;
                 }
+            }
+            else
+            {
+                MessageBox.Show($"The port can only contain numeric values. Current port value is '{CalledPort.Text}'.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -146,11 +172,11 @@ namespace MWL_Tester
                 _logger.Information("Starting C-Echo");
 
                 var client = GetDicomClient();
-                
+
                 try
                 {
                     client.NegotiateAsyncOps();
-                    
+
                     for (int i = 0; i < 10; i++)
                     {
                         await client.AddRequestAsync(new DicomCEchoRequest());
@@ -211,6 +237,11 @@ namespace MWL_Tester
             };
 
             var client = DicomClientFactory.Create(connection.CalledHost, connection.Port, connection.UseTLS, connection.CallingAET, connection.CalledAET);
+
+            // TODO: allow these to be enabled or disabled in settings for troubleshooting:
+            client.ServiceOptions.LogDimseDatasets = true;
+            //client.ServiceOptions.LogDataPDUs = true;
+
             client.AssociationAccepted += Client_AssociationAccepted;
             client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
             client.AssociationRejected += Client_AssociationRejected;

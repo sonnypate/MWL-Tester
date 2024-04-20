@@ -65,6 +65,8 @@ namespace MWL_Tester.DICOM
                     foreach (var item in scheduledProcedureStep)
                     {
                         worklist.Modality = item.GetSingleValueOrDefault(DicomTag.Modality, string.Empty);
+                        worklist.ScheduledStationAET = item.GetSingleValueOrDefault(DicomTag.ScheduledStationAETitle, string.Empty);
+                        worklist.ScheduledStationName = item.GetSingleValueOrDefault(DicomTag.ScheduledStationName, string.Empty);
                         worklist.ScheduledStudyDate = item.GetSingleValueOrDefault(DicomTag.ScheduledProcedureStepStartDate, string.Empty);
                         worklist.ScheduledStudyTime = item.GetSingleValueOrDefault(DicomTag.ScheduledProcedureStepStartTime, string.Empty);
                     }
