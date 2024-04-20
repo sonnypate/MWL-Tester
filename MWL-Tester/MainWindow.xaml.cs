@@ -108,21 +108,23 @@ namespace MWL_Tester
             {
                 UpdateStatusBar("Starting worklist query");
 
-                WorklistRequest request = new WorklistRequest()
-                {
-                    Accession = AccessionText.Text,
-                    PatientID = PatientIdText.Text,
-                    PatientName = PatientNameText.Text,
-                    StationAET = string.Empty,
-                    StationName = string.Empty,
-                    Modality = ModalityText.Text,
-                    ScheduledDateTime = null
-                };
+                var request = DicomCFindRequest.CreateWorklistQuery(
+                    patientId: PatientIdText.Text,
+                    patientName: PatientNameText.Text,
+                    stationAE: string.Empty,
+                    stationName: string.Empty,
+                    modality: ModalityText.Text
+                    //scheduledDateTime: string.Empty
+                );
+
+                //request.Dataset.AddOrUpdate(DicomTag.AccessionNumber, AccessionText.Text);
 
                 try
                 {
                     var client = GetDicomClient();
-                    var dataset = await _worklistQuery.PerformWorklistQuery(client, CreateWorklistRequest(request), cancellationToken);
+                    client.ServiceOptions.LogDimseDatasets = true;
+                    //client.ServiceOptions.LogDataPDUs = true;
+                    var dataset = await _worklistQuery.PerformWorklistQuery(client, request, cancellationToken);
                     _worklistQuery.GetWorklistValuesFromDataset(dataset);
                 }
                 catch (Exception)
@@ -215,20 +217,6 @@ namespace MWL_Tester
             client.AssociationReleased += Client_AssociationReleased;
 
             return client;
-        }
-
-        private DicomCFindRequest CreateWorklistRequest(WorklistRequest requestParams)
-        {
-            var worklistQuery = DicomCFindRequest.CreateWorklistQuery(
-                patientId: requestParams.PatientID,
-                patientName: requestParams.PatientName,
-                stationAE: requestParams.StationAET,
-                stationName: requestParams.StationName,
-                modality: requestParams.Modality,
-                scheduledDateTime: requestParams.ScheduledDateTime
-                );
-
-            return worklistQuery;
         }
 
         private void CalledPort_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
