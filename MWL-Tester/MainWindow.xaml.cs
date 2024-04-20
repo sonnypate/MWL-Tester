@@ -104,17 +104,13 @@ namespace MWL_Tester
             {
                 UpdateStatusBar("Starting worklist query");
 
-                //var dr = new DicomDateRange(StartDatePicker.SelectedDate.GetValueOrDefault(), EndDatePicker.SelectedDate.GetValueOrDefault());
-
                 var request = DicomCFindRequest.CreateWorklistQuery(
                     patientId: PatientIdText.Text,
                     patientName: PatientNameText.Text,
                     stationAE: StationAetText.Text,
                     stationName: StationNameText.Text,
                     modality: ModalityText.Text
-                    //scheduledDateTime: dr
                 );
-
 
                 // The dataset used to query the PACS server can be extended:
                 //request.Dataset.AddOrUpdate(DicomTag.AccessionNumber, AccessionText.Text);
@@ -149,10 +145,12 @@ namespace MWL_Tester
                     var dataset = await _worklistQuery.PerformWorklistQuery(client, request, cancellationToken);
                     _worklistQuery.GetWorklistValuesFromDataset(dataset);
                 }
-                catch (Exception)
+                catch (AggregateException ex)
                 {
-
-                    throw;
+                    _logger.Error("Error: {exception}", ex);
+                    MessageBox.Show($"{ex.Message}", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Error);
+                    UpdateStatusBar("Error");
+                    return;
                 }
             }
             else
