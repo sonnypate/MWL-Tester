@@ -18,13 +18,17 @@ namespace MWL_Tester
         private ILogger _logger;
         private string _logDir;
         private CancellationTokenSource _cts = new CancellationTokenSource();
-        WorklistQuery _worklistQuery;
+        private WorklistQuery _worklistQuery;
 
         public MainWindow()
         {
+            // Logging
             _logger = Log.ForContext<MainWindow>();
-            InitializeComponent();
             _logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MWL-Tester\Logs\");
+
+            InitializeComponent();
+
+            // Worklist query and binding
             _worklistQuery = new WorklistQuery();
             QueryResultsGrid.ItemsSource = _worklistQuery.WorklistResponses;
             _worklistQuery.WorklistResponses.CollectionChanged += WorklistResponses_CollectionChanged;
@@ -80,22 +84,22 @@ namespace MWL_Tester
             }
         }
 
-        private async void Submit_Click(object sender, RoutedEventArgs e)
+        private async void QueryButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Submit.Content.Equals("Cancel"))
+            if (QueryButton.Content.Equals("Cancel"))
             {
                 _logger.Warning("Cancelled worklist query");
                 _cts.Cancel();
-                Submit.Content = "Submit";
+                QueryButton.Content = "Submit";
             }
             // Reset the cancellation token to be used again if needed.
             else
             {
                 _cts = new CancellationTokenSource();
 
-                Submit.Content = "Cancel";
+                QueryButton.Content = "Cancel";
                 await PerformWorklistQuery(_cts.Token);
-                Submit.Content = "Submit";
+                QueryButton.Content = "Submit";
             }
         }
         #endregion
@@ -117,24 +121,24 @@ namespace MWL_Tester
                     modality: ModalityText.Text
                 );
 
-                // The dataset used to query the PACS server can be extended:
-                //request.Dataset.AddOrUpdate(DicomTag.AccessionNumber, AccessionText.Text);
-
                 // Get the ScheduledProcedureStepSequence from the dataset created by the CreateWorklistQuery function.
                 // Using this instead of the built-in scheduledDateTime parameter from the CreateWorklistQuery function because it requires
                 // a range. This allows me to optionally select either a start date, both, or none:
                 foreach (var item in request.Dataset.GetSequence(DicomTag.ScheduledProcedureStepSequence))
                 {
+                    // If a start date is selected, use this.
                     if (StartDatePicker.SelectedDate != null)
                     {
                         item?.AddOrUpdate(DicomTag.ScheduledProcedureStepStartDate, StartDatePicker.SelectedDate.GetValueOrDefault());
                     }
 
+                    // if the end date is selected, but there's no start date, then copy the end date to the start date.
                     if (StartDatePicker.SelectedDate == null && EndDatePicker.SelectedDate != null)
                     {
                         StartDatePicker.SelectedDate = EndDatePicker.SelectedDate.GetValueOrDefault();
                     }
 
+                    // If both start date and end date are selected then create a range with date and time.
                     if (StartDatePicker.SelectedDate != null && EndDatePicker.SelectedDate != null)
                     {
                         var dr = new DicomDateRange(StartDatePicker.SelectedDate.GetValueOrDefault(), EndDatePicker.SelectedDate.GetValueOrDefault().AddDays(1).AddTicks(-1));
@@ -261,6 +265,7 @@ namespace MWL_Tester
             e.Handled = regex.IsMatch(e.Text);
         }
 
+        #region Status Bar
         private void WorklistResponses_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             UpdateStatusBar($"Found {_worklistQuery.WorklistResponses.Count} results.");
@@ -285,5 +290,6 @@ namespace MWL_Tester
         {
             UpdateStatusBar("Association rejected");
         }
+        #endregion
     }
 }
