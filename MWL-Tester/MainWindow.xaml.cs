@@ -31,6 +31,11 @@ namespace MWL_Tester
         }
 
         #region Menu Bar
+        private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsDialog settings = new SettingsDialog();
+            settings.ShowDialog();
+        }
         private void LogMenuItem_Click(object sender, RoutedEventArgs e)
         {
             ProcessStartInfo processStartInfo = new ProcessStartInfo()
@@ -236,10 +241,11 @@ namespace MWL_Tester
 
             var client = DicomClientFactory.Create(connection.CalledHost, connection.Port, connection.UseTLS, connection.CallingAET, connection.CalledAET);
 
-            // TODO: allow these to be enabled or disabled in settings for troubleshooting:
-            client.ServiceOptions.LogDimseDatasets = true;
-            //client.ServiceOptions.LogDataPDUs = true;
+            // Additional logging for debug:
+            client.ServiceOptions.LogDimseDatasets = Properties.Settings.Default.Client_LogDimseDatasets;
+            client.ServiceOptions.LogDataPDUs = Properties.Settings.Default.Client_LogDataPDUs;
 
+            // Client events to update the status bar.
             client.AssociationAccepted += Client_AssociationAccepted;
             client.AssociationRequestTimedOut += Client_AssociationRequestTimedOut;
             client.AssociationRejected += Client_AssociationRejected;

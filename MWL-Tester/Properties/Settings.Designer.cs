@@ -82,5 +82,29 @@ namespace MWL_Tester.Properties {
                 this["UseTLS"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool Client_LogDimseDatasets {
+            get {
+                return ((bool)(this["Client_LogDimseDatasets"]));
+            }
+            set {
+                this["Client_LogDimseDatasets"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool Client_LogDataPDUs {
+            get {
+                return ((bool)(this["Client_LogDataPDUs"]));
+            }
+            set {
+                this["Client_LogDataPDUs"] = value;
+            }
+        }
     }
 }

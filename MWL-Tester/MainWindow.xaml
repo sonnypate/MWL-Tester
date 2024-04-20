@@ -10,6 +10,7 @@
         <DockPanel LastChildFill="True">
             <Menu DockPanel.Dock="Top" Background="White">
                 <MenuItem Header="_File" >
+                    <MenuItem Header="_Settings" Name="SettingsMenuItem" Click="SettingsMenuItem_Click" />
                     <MenuItem Header="_Log" Name="LogMenuItem" Click="LogMenuItem_Click" />
                     <Separator />
                     <MenuItem Header="_Exit" Name="ExitMenuItem" Click="ExitMenuItem_Click" />
