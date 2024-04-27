@@ -90,7 +90,7 @@ namespace MWL_Tester
             {
                 _logger.Warning("Cancelled worklist query");
                 _cts.Cancel();
-                QueryButton.Content = "Submit";
+                QueryButton.Content = "Query";
             }
             // Reset the cancellation token to be used again if needed.
             else
@@ -99,7 +99,7 @@ namespace MWL_Tester
 
                 QueryButton.Content = "Cancel";
                 await PerformWorklistQuery(_cts.Token);
-                QueryButton.Content = "Submit";
+                QueryButton.Content = "Query";
             }
         }
         #endregion
