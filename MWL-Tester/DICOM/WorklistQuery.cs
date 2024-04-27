@@ -57,6 +57,7 @@ namespace MWL_Tester.DICOM
                 worklist.PatientName = dataset.GetSingleValueOrDefault(DicomTag.PatientName, string.Empty);
                 worklist.PatientId = dataset.GetSingleValueOrDefault(DicomTag.PatientID, string.Empty);
                 worklist.Accession = dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, string.Empty);
+                worklist.ExamDescription = dataset.GetSingleValueOrDefault(DicomTag.RequestedProcedureDescription, string.Empty);
                 worklist.StudyInstanceUID = dataset.GetSingleValue<string>(DicomTag.StudyInstanceUID);
 
                 var scheduledProcedureStep = dataset.GetSequence(DicomTag.ScheduledProcedureStepSequence);

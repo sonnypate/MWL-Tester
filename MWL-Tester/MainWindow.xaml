@@ -135,6 +135,7 @@
                             <DataGridTextColumn Header="Patient ID" Binding="{Binding PatientId}" />
                             <DataGridTextColumn Header="Accession" Binding="{Binding Accession}" />
                             <DataGridTextColumn Header="Modality" Binding="{Binding Modality}" />
+                            <DataGridTextColumn Header="Exam Description" Binding="{Binding ExamDescription}" />
                             <DataGridTextColumn Header="Station AET" Binding="{Binding ScheduledStationAET}" />
                             <DataGridTextColumn Header="Station Name" Binding="{Binding ScheduledStationName}" />
                             <DataGridTextColumn Header="Scheduled Date" Binding="{Binding ScheduledStudyDate}" />
