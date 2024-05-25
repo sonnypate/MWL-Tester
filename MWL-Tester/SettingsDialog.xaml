@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MWL_Tester"
         xmlns:properties="clr-namespace:MWL_Tester.Properties"
         mc:Ignorable="d"
-        Title="Settings" Height="450" Width="800" MinHeight="450" MinWidth="800">
+        Title="Settings" Height="250" Width="400" MinHeight="250" MinWidth="400">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -20,7 +20,7 @@
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <GroupBox Header="Logging:" Margin="5,5,5,5" BorderBrush="Black" BorderThickness="1">
+        <GroupBox Header="Logging:" Margin="5,5,5,5" BorderBrush="Black" BorderThickness="1" Grid.ColumnSpan="2">
             <Grid DataContext="{Binding Path=(properties:Settings.Default)}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
