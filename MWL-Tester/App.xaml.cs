@@ -31,7 +31,7 @@ namespace MWL_Tester
             var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MWL-Tester\Logs\Trace.log");
 
             var loggerConfig = new LoggerConfiguration()
-                .Enrich.With<MachineNameEnricher>()
+                .Enrich.WithMachineName()
                 .MinimumLevel.Verbose()
                 .WriteTo.File(logPath, 
                     global::Serilog.Events.LogEventLevel.Verbose, 
