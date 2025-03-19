@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MWL_Tester.DICOM
+﻿namespace MWL_Tester.DICOM
 {
     internal class Connection
     {

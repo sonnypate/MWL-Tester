@@ -1,9 +1,6 @@
 ﻿using FellowOakDicom;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Enrichers;
-using Serilog.Events;
 using System.IO;
 using System.Windows;
 using ILogger = Serilog.ILogger;
