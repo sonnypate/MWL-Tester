@@ -1,7 +1,11 @@
-# MWL-Tester    
-A simple modality worklist testing application written in C#, using the Fellow Oak DICOM library: https://github.com/fo-dicom/fo-dicom. Built for .NET 8.
+# MWL-Tester  
 
-# Screenshots
+## Summary
+A simple DICOM modality worklist testing application written in C#, using the [Fellow Oak DICOM](https://github.com/fo-dicom/fo-dicom) library. It was built for .NET 8.
+
+Logging is enabled and all logs can be found in `AppData\Local\MWL-Tester\Logs`.
+
+## Screenshots
 ![Main Window](/screenshots/StartingWindow.PNG?raw=true "Main MWL-Tester window")
 
 ![Open Query](/screenshots/OpenQuery.PNG?raw=true "Main window showing a query without any restriction")
